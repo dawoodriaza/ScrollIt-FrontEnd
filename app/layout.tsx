@@ -1,29 +1,27 @@
-import { Geist, Geist_Mono, Inter } from "next/font/google"
-
+import type { Metadata } from "next"
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { cn } from "@/lib/utils";
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'})
-
-const fontMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-})
+export const metadata: Metadata = {
+  title: "LiveStream Platform",
+  description: "Watch and stream live content",
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, "font-sans", inter.variable)}
-    >
-      <body>
-        <ThemeProvider>{children}</ThemeProvider>
+    <html lang="en">
+      <body
+        style={{
+          margin: 0,
+          fontFamily: "Inter, sans-serif",
+          backgroundColor: "#0a0a0a",
+          color: "white",
+        }}
+      >
+        {children}
       </body>
     </html>
   )
