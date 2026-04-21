@@ -10,6 +10,7 @@ export default function Navbar() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [loggedIn, setLoggedIn] = useState(false)
+  const [search, setSearch] = useState("")
 
   useEffect(() => {
     setUser(getUser())
@@ -21,36 +22,51 @@ export default function Navbar() {
     router.push("/login")
   }
 
+  const handleSearch = (e: any) => {
+    if (e.key === "Enter" && search.trim()) {
+      router.push(`/streams?search=${search.trim()}`)
+    }
+  }
+
+  const isAdmin = user?.role === "ADMIN"
+
   return (
     <nav style={styles.nav}>
       <div style={styles.inner}>
-        {/* Logo */}
         <Link href="/streams" style={styles.logo}>
           <span style={styles.logoIcon}>🎥</span>
           <span style={styles.logoText}>LiveStream</span>
         </Link>
 
-        {/* Search */}
-        <input
-          placeholder="Search streams..."
-          style={styles.search}
-          onKeyDown={(e: any) => {
-            if (e.key === "Enter") {
-              router.push(`/streams?search=${e.target.value}`)
-            }
-          }}
-        />
+        {!isAdmin && (
+          <input
+            placeholder="Search streams..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={handleSearch}
+            style={styles.search}
+          />
+        )}
 
-        {/* Right side */}
         <div style={styles.right}>
           {loggedIn ? (
             <>
-              <Link href="/streams/create" style={styles.createBtn}>
-                + Go Live
-              </Link>
+              {isAdmin ? (
+                <Link href="/admin" style={styles.adminBtn}>
+                  Admin Panel
+                </Link>
+              ) : (
+                <Link href="/streams/create" style={styles.createBtn}>
+                  + Go Live
+                </Link>
+              )}
               <Link href="/profile" style={styles.avatar}>
                 {user?.username?.[0]?.toUpperCase() || "U"}
               </Link>
+              <span style={styles.userInfo}>
+                {user?.username}
+                {isAdmin && <span style={styles.adminTag}> ADMIN</span>}
+              </span>
               <button onClick={handleLogout} style={styles.logoutBtn}>
                 Logout
               </button>
@@ -73,7 +89,7 @@ export default function Navbar() {
 
 const styles: any = {
   nav: {
-    position: "sticky",
+    position: "sticky" as const,
     top: 0,
     zIndex: 100,
     background: "rgba(10,10,10,0.95)",
@@ -125,9 +141,18 @@ const styles: any = {
     marginLeft: "auto",
     flexShrink: 0,
   },
+  adminBtn: {
+    padding: "7px 16px",
+    background: "linear-gradient(90deg,#f59e0b,#ef4444)",
+    borderRadius: 20,
+    color: "white",
+    fontSize: 13,
+    fontWeight: 600,
+    textDecoration: "none",
+  },
   createBtn: {
     padding: "7px 16px",
-    background: "linear-gradient(90deg, #a855f7, #ec4899)",
+    background: "linear-gradient(90deg,#a855f7,#ec4899)",
     borderRadius: 20,
     color: "white",
     fontSize: 13,
@@ -138,7 +163,7 @@ const styles: any = {
     width: 34,
     height: 34,
     borderRadius: "50%",
-    background: "linear-gradient(135deg, #a855f7, #ec4899)",
+    background: "linear-gradient(135deg,#a855f7,#ec4899)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -147,6 +172,8 @@ const styles: any = {
     textDecoration: "none",
     cursor: "pointer",
   },
+  userInfo: { fontSize: 13, color: "#ccc" },
+  adminTag: { color: "#f59e0b", fontSize: 11, fontWeight: 700 },
   logoutBtn: {
     background: "transparent",
     border: "1px solid #333",
@@ -164,7 +191,7 @@ const styles: any = {
   },
   registerBtn: {
     padding: "7px 16px",
-    background: "linear-gradient(90deg, #a855f7, #ec4899)",
+    background: "linear-gradient(90deg,#a855f7,#ec4899)",
     borderRadius: 20,
     color: "white",
     fontSize: 13,
