@@ -1,7 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @next/next/no-img-element */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -10,7 +6,8 @@ import { getToken, isLoggedIn } from "@/lib/auth"
 
 export default function CreateStreamPage() {
   const router = useRouter()
-  const [form, setForm] = useState({ title: "", description: "" })
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
   const [thumbnail, setThumbnail] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -30,36 +27,40 @@ export default function CreateStreamPage() {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault()
+    if (!title.trim()) {
+      setError("Title is required")
+      return
+    }
     setLoading(true)
     setError("")
 
     try {
       const token = getToken()
 
-      // Step 1: Create stream with JSON
+    
       const res = await fetch("http://localhost:8080/api/streams", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ title, description }),
       })
 
       const data = await res.json()
 
       if (!res.ok) {
         setError(data.message || "Failed to create stream")
+        setLoading(false)
         return
       }
 
       const streamId = data.streamId
 
-      // Step 2: Upload thumbnail if selected
+
       if (thumbnail && streamId) {
         const formData = new FormData()
         formData.append("file", thumbnail)
-
         await fetch(`http://localhost:8080/api/streams/${streamId}/thumbnail`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
@@ -68,7 +69,7 @@ export default function CreateStreamPage() {
       }
 
       router.push(`/streams/${streamId}`)
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please try again.")
     } finally {
       setLoading(false)
@@ -80,66 +81,73 @@ export default function CreateStreamPage() {
       <Navbar />
       <div style={styles.container}>
         <div style={styles.card}>
-          <h1 style={styles.title}>🎥 Create a Stream</h1>
-          <p style={styles.subtitle}>Set up your live stream</p>
+          <h1 style={styles.title}>Create Stream</h1>
+          <p style={styles.subtitle}>Go live and connect with your audience</p>
 
           {error && <div style={styles.error}>{error}</div>}
 
           <form onSubmit={handleSubmit}>
-            {/* Thumbnail Upload */}
-            <div style={styles.thumbnailUpload}>
+            {/* Thumbnail */}
+            <div style={styles.field}>
+              <label style={styles.label}>Thumbnail (optional)</label>
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/gif,image/webp"
                 onChange={handleThumbnailChange}
                 style={{ display: "none" }}
                 id="thumbnail"
               />
-              <label htmlFor="thumbnail" style={styles.thumbnailLabel}>
+              <label htmlFor="thumbnail" style={styles.thumbLabel}>
                 {preview ? (
-                  <img
-                    src={preview}
-                    alt="preview"
-                    style={styles.previewImage}
-                  />
+                  <img src={preview} alt="preview" style={styles.preview} />
                 ) : (
-                  <div style={styles.uploadPlaceholder}>
-                    <span style={{ fontSize: 32 }}>📷</span>
-                    <p style={{ marginTop: 8, color: "#888", fontSize: 13 }}>
+                  <div style={styles.thumbPlaceholder}>
+                    <span style={{ fontSize: 36 }}>📷</span>
+                    <p style={{ color: "#888", fontSize: 13, marginTop: 8 }}>
                       Click to upload thumbnail
+                    </p>
+                    <p style={{ color: "#555", fontSize: 11, marginTop: 4 }}>
+                      JPEG, PNG, GIF, WEBP — max 10MB
                     </p>
                   </div>
                 )}
               </label>
+              {thumbnail && (
+                <p style={{ color: "#4ade80", fontSize: 12, marginTop: 6 }}>
+                  Selected: {thumbnail.name}
+                </p>
+              )}
             </div>
 
+            {/* Title */}
             <div style={styles.field}>
               <label style={styles.label}>Stream Title *</label>
               <input
-                placeholder="What's your stream about?"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="What are you streaming today?"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 style={styles.input}
-                required
                 maxLength={100}
+                required
               />
             </div>
 
+            {/* Description */}
             <div style={styles.field}>
-              <label style={styles.label}>Description</label>
+              <label style={styles.label}>Description (optional)</label>
               <textarea
                 placeholder="Tell viewers what to expect..."
-                value={form.description}
-                onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
-                }
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
                 style={styles.textarea}
                 rows={4}
                 maxLength={500}
               />
+              <p style={styles.charCount}>{description.length}/500</p>
             </div>
 
-            <div style={styles.buttonRow}>
+            {/* Buttons */}
+            <div style={styles.btnRow}>
               <button
                 type="button"
                 onClick={() => router.back()}
@@ -159,18 +167,14 @@ export default function CreateStreamPage() {
 }
 
 const styles: any = {
-  container: {
-    maxWidth: 600,
-    margin: "0 auto",
-    padding: "32px 16px",
-  },
+  container: { maxWidth: 580, margin: "0 auto", padding: "32px 16px" },
   card: {
     background: "#111",
     border: "1px solid #222",
     borderRadius: 16,
     padding: 32,
   },
-  title: { fontSize: 22, fontWeight: 700, marginBottom: 8 },
+  title: { fontSize: 22, fontWeight: 700, marginBottom: 6 },
   subtitle: { color: "#888", fontSize: 14, marginBottom: 24 },
   error: {
     background: "#2a0a0a",
@@ -181,27 +185,6 @@ const styles: any = {
     marginBottom: 16,
     fontSize: 14,
   },
-  thumbnailUpload: { marginBottom: 24 },
-  thumbnailLabel: {
-    display: "block",
-    width: "100%",
-    aspectRatio: "16/9",
-    border: "2px dashed #333",
-    borderRadius: 12,
-    overflow: "hidden",
-    cursor: "pointer",
-  },
-  uploadPlaceholder: {
-    width: "100%",
-    height: "100%",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#1a1a1a",
-    minHeight: 160,
-  },
-  previewImage: { width: "100%", height: "100%", objectFit: "cover" },
   field: { marginBottom: 20 },
   label: {
     display: "block",
@@ -210,6 +193,25 @@ const styles: any = {
     color: "#ccc",
     marginBottom: 8,
   },
+  thumbLabel: {
+    display: "block",
+    width: "100%",
+    border: "2px dashed #333",
+    borderRadius: 12,
+    overflow: "hidden",
+    cursor: "pointer",
+    minHeight: 160,
+  },
+  thumbPlaceholder: {
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#1a1a1a",
+    minHeight: 160,
+    padding: 20,
+  },
+  preview: { width: "100%", aspectRatio: "16/9", objectFit: "cover" as const },
   input: {
     width: "100%",
     padding: "10px 14px",
@@ -229,9 +231,15 @@ const styles: any = {
     color: "white",
     fontSize: 14,
     outline: "none",
-    resize: "vertical",
+    resize: "vertical" as const,
   },
-  buttonRow: {
+  charCount: {
+    color: "#555",
+    fontSize: 11,
+    textAlign: "right" as const,
+    marginTop: 4,
+  },
+  btnRow: {
     display: "flex",
     gap: 12,
     justifyContent: "flex-end",
@@ -248,7 +256,7 @@ const styles: any = {
   },
   submitBtn: {
     padding: "10px 24px",
-    background: "linear-gradient(90deg, #a855f7, #ec4899)",
+    background: "linear-gradient(90deg,#a855f7,#ec4899)",
     border: "none",
     borderRadius: 8,
     color: "white",

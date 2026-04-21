@@ -17,16 +17,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState("")
 
-  useEffect(() => {
-    if (!isLoggedIn()) {
-      router.push("/login")
-      return
-    }
-    fetchProfile()
-    fetchMyStreams()
-    fetchTransactions()
-  }, [])
-
   const fetchProfile = async () => {
     const res = await fetch("http://localhost:8080/api/users/me", {
       headers: { Authorization: `Bearer ${getToken()}` },
@@ -55,6 +45,15 @@ export default function ProfilePage() {
     const data = await res.json()
     setTransactions(data.content || [])
   }
+ useEffect(() => {
+    if (!isLoggedIn()) {
+      router.push("/login")
+      return
+    }
+    fetchProfile()
+    fetchMyStreams()
+    fetchTransactions()
+  }, [])
 
   const handleUpdateProfile = async () => {
     const res = await fetch("http://localhost:8080/api/users/me", {
